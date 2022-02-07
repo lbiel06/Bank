@@ -53,6 +53,7 @@ def register():
 
             hashed_password = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
             database.User.register(username, hashed_password.decode())
+            database.User.set_balance(username, 1000)
 
             flash('Registration completed')
             return redirect('/login')
