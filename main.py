@@ -32,7 +32,7 @@ def login():
             session['username'] = username
             return redirect('/')
 
-    flash('Invalid credentials')
+    flash('Login failed')
 
     return redirect('/login')
 
@@ -47,18 +47,17 @@ def register():
     username = request.form.get('username', '')
     password = request.form.get('password', '')
 
-    if not (username and password):
-        flash('Empty fields')
+    if username and password:
 
-    if database.User.find(username):
-        flash('Username is taken')
+        if not database.User.find(username):
 
-    else:
-        hashed_password = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
-        database.User.register(username, hashed_password.decode())
+            hashed_password = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
+            database.User.register(username, hashed_password.decode())
 
-        return redirect('/login')
+            flash('Registration completed')
+            return redirect('/login')
 
+    flash('Registration failed')
     return redirect('/register')
 
 
@@ -72,29 +71,27 @@ def send():
 
     # print(receiver, ammount)
 
-    if not (receiver and ammount):
-        flash('Empty fields')
-
     try:
         ammount = int(ammount)
     except:
         return redirect('/')
 
-    if not database.User.find(receiver):
-        flash('Receiver does not exist')
+    if receiver and ammount:
 
-    sender_balance = database.User.find(session['username'])[2]
+        if database.User.find(receiver):
 
-    if ammount > sender_balance:
-        flash('Not enough funds')
+            sender_balance = database.User.find(session['username'])[2]
+            receiver_balance = database.User.find(receiver)[2]
 
-    else:
-        receiver_balance = database.User.find(receiver)[2]
-        database.User.set_balance(session['username'], sender_balance - ammount)
-        database.User.set_balance(receiver, receiver_balance + ammount)
+            if sender_balance >= ammount:
 
-        flash('The transaction was completed')
+                database.User.set_balance(session['username'], sender_balance - ammount)
+                database.User.set_balance(receiver, receiver_balance + ammount)
 
+                flash('The transaction was completed')
+                return redirect('/')
+
+    flash('Transaction failed')
     return redirect('/')
 
 
